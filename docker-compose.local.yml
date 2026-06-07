@@ -1,0 +1,42 @@
+version: '3.8'
+
+# MiroFish 本地开发环境
+# 使用 Graphiti + Neo4j 替代 Zep Cloud
+
+services:
+  neo4j:
+    image: neo4j:5.26
+    container_name: mirofish-neo4j
+    ports:
+      - "7474:7474"  # HTTP (Browser)
+      - "7687:7687"  # Bolt (Driver)
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_apoc_export_file_enabled: "true"
+      NEO4J_apoc_import_file_enabled: "true"
+      NEO4J_apoc_import_file_use__neo4j__config: "true"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+
+# 使用说明：
+# 1. 启动 Neo4j：docker-compose -f docker-compose.local.yml up -d
+# 2. 等待健康检查通过：docker-compose -f docker-compose.local.yml ps
+# 3. 访问 Neo4j Browser：http://localhost:7474 (用户名: neo4j, 密码: password)
+# 4. 设置环境变量：
+#    export ZEP_BACKEND=graphiti
+#    export NEO4J_URI=bolt://localhost:7687
+#    export NEO4J_USER=neo4j
+#    export NEO4J_PASSWORD=password
+# 5. 启动 MiroFish 后端：cd backend && uv run python -m flask run

@@ -1,0 +1,19 @@
+# 核心框架
+flask>=3.0.0
+flask-cors>=6.0.0
+
+# LLM 相关
+openai>=1.0.0
+
+# Zep Cloud (保留但不使用)
+zep-cloud==3.13.0
+
+# Graphiti 本地后端
+graphiti-core>=0.25.0,<0.26.0
+
+# 文件处理
+PyMuPDF>=1.24.0
+
+# 工具库
+python-dotenv>=1.0.0
+pydantic>=2.0.0
