@@ -1,7 +1,7 @@
 [project]
 name = "mirofish-backend"
 version = "0.1.0"
-description = "MiroFish - 简洁通用的群体智能引擎，预测万物"
+description = "MiroFish - Concise general-purpose swarm intelligence engine, predicting everything"
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0" }
 authors = [
@@ -9,41 +9,41 @@ authors = [
 ]
 
 dependencies = [
-    # 核心框架
+    # Core framework
     "flask>=3.0.0",
     "flask-cors>=6.0.0",
 
-    # LLM 相关
+    # LLM-related
     "openai>=1.0.0",
 
-    # Zep Cloud (默认后端)
+    # Zep Cloud (default backend)
     "zep-cloud==3.13.0",
 
-    # 文件处理
+    # File processing
     "PyMuPDF>=1.24.0",
 
-    # 工具库
+    # Utilities
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
-# Graphiti 本地后端 (替代 Zep Cloud)
-# 安装: uv sync --extra graphiti
-# 启用: ZEP_BACKEND=graphiti
-# 注意: 与 oasis 依赖冲突 (neo4j 版本不兼容)
+# Graphiti local backend (alternative to Zep Cloud)
+# Install: uv sync --extra graphiti
+# Enable: ZEP_BACKEND=graphiti
+# Note: conflicts with oasis dependency (incompatible neo4j versions)
 graphiti = [
     "graphiti-core>=0.25.0,<0.26.0",
-    # graphiti-core 需要 neo4j>=5.26.0
+    # graphiti-core requires neo4j>=5.26.0
 ]
 
-# OASIS 社交媒体模拟
-# 安装: uv sync --extra oasis
-# 注意: 与 graphiti 依赖冲突 (neo4j 版本不兼容)
+# OASIS social media simulation
+# Install: uv sync --extra oasis
+# Note: conflicts with graphiti dependency (incompatible neo4j versions)
 oasis = [
     "camel-oasis==0.2.5",
     "camel-ai==0.2.78",
-    # camel-oasis 需要 neo4j==5.23.0
+    # camel-oasis requires neo4j==5.23.0
 ]
 
 dev = [

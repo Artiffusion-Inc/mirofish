@@ -1,8 +1,8 @@
-# MiroFish 本地版启动指南
+# MiroFish Local Edition Startup Guide
 
-本文档说明如何启动 MiroFish 本地版（使用 graphiti-core + Neo4j 替代 Zep Cloud）。
+This document explains how to start the MiroFish local edition (using graphiti-core + Neo4j instead of Zep Cloud).
 
-## 架构概览
+## Architecture Overview
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -13,43 +13,43 @@
                     ┌──────┴──────┐
                     │             │
               ┌─────▼─────┐ ┌─────▼─────┐
-              │  主环境    │ │  模拟环境  │
+              │  Main Env  │ │  Sim Env  │
               │ graphiti  │ │ camel-ai  │
               │ neo4j 6.x │ │ neo4j 5.x │
               └───────────┘ └───────────┘
 ```
 
-**双环境隔离**：camel-ai 和 graphiti-core 对 neo4j driver 版本有冲突，通过独立虚拟环境解决。
+**Dual-environment isolation**: camel-ai and graphiti-core have conflicting neo4j driver version requirements, resolved through separate virtual environments.
 
-## 前置要求
+## Prerequisites
 
-| 工具 | 版本要求 | 说明 |
-|------|---------|------|
-| Node.js | 18+ | 前端运行环境 |
-| Python | 3.11 | camel-oasis 需要 3.10-3.11 |
-| uv | 最新版 | Python 包管理器 |
-| Docker | 最新版 | 运行 Neo4j |
+| Tool | Version | Description |
+|------|---------|-------------|
+| Node.js | 18+ | Frontend runtime |
+| Python | 3.11 | camel-oasis requires 3.10-3.11 |
+| uv | Latest | Python package manager |
+| Docker | Latest | Runs Neo4j |
 
-## 快速启动
+## Quick Start
 
-### 1. 启动 Neo4j
+### 1. Start Neo4j
 
 ```bash
 docker-compose -f docker-compose.local.yml up -d neo4j
 ```
 
-验证：访问 http://localhost:7474，使用 `neo4j/password` 登录
+Verify: visit http://localhost:7474 and log in with `neo4j/password`
 
-### 2. 配置环境变量
+### 2. Configure Environment Variables
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env`：
+Edit `.env`:
 
 ```env
-# LLM（推荐阿里百炼 qwen-plus）
+# LLM (Alibaba Bailian qwen-plus recommended)
 LLM_API_KEY=your_api_key
 LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 LLM_MODEL_NAME=qwen-plus
@@ -59,26 +59,26 @@ NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 
-# Embedding（DashScope）
+# Embedding (DashScope)
 EMBEDDING_API_KEY=your_dashscope_api_key
 EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 EMBEDDING_MODEL=text-embedding-v3
 ```
 
-### 3. 安装依赖
+### 3. Install Dependencies
 
 ```bash
-# 一键安装
+# One-click install
 npm run setup:all
 
-# 或分步
-npm run setup          # Node 依赖
-npm run setup:backend  # Python 依赖
+# Or step by step
+npm run setup          # Node dependencies
+npm run setup:backend  # Python dependencies
 ```
 
-### 4. 创建模拟环境
+### 4. Create Simulation Environment
 
-解决 neo4j 版本冲突：
+Resolves the neo4j version conflict:
 
 ```bash
 cd backend
@@ -88,23 +88,23 @@ uv pip install camel-oasis openai python-dotenv
 deactivate
 ```
 
-### 5. 启动服务
+### 5. Start Services
 
 ```bash
 npm run dev
 ```
 
-服务地址：
-- 前端：http://localhost:3000
-- 后端：http://localhost:5001
-- Neo4j：http://localhost:7474
+Service URLs:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5001
+- Neo4j: http://localhost:7474
 
-## 数据清理
+## Data Cleanup
 
 ```bash
 cd backend
 
-# 清理 Neo4j
+# Clean Neo4j
 .venv/bin/python -c "
 from neo4j import GraphDatabase
 d = GraphDatabase.driver('bolt://localhost:7687', auth=('neo4j', 'password'))
@@ -112,25 +112,25 @@ with d.session() as s: s.run('MATCH (n) DETACH DELETE n')
 d.close()
 "
 
-# 清理模拟数据
+# Clean simulation data
 rm -rf uploads/simulations/* uploads/projects/*
 ```
 
-## 验证环境
+## Verify Environment
 
 ```bash
 cd backend
 
-# 检查 neo4j 版本隔离
-echo "主环境: $(.venv/bin/python -c 'import neo4j; print(neo4j.__version__)')"
-echo "模拟环境: $(.venv-simulation/bin/python -c 'import neo4j; print(neo4j.__version__)')"
-# 预期：主环境 6.x，模拟环境 5.23.0
+# Check neo4j version isolation
+echo "Main env: $(.venv/bin/python -c 'import neo4j; print(neo4j.__version__)')"
+echo "Sim env: $(.venv-simulation/bin/python -c 'import neo4j; print(neo4j.__version__)')"
+# Expected: Main env 6.x, Sim env 5.23.0
 ```
 
-## 问题排查
+## Troubleshooting
 
-详见 [docs/zep-localization/troubleshooting.md](docs/zep-localization/troubleshooting.md)
+See [docs/zep-localization/troubleshooting.md](docs/zep-localization/troubleshooting.md)
 
-## 开发工具
+## Development Tools
 
-本项目使用 [Claude Code](https://claude.ai/claude-code) 开发，配合 [planning-with-files](https://github.com/OthmanAdi/planning-with-files) skill 管理复杂任务。
+This project uses [Claude Code](https://claude.ai/claude-code) for development, with the [planning-with-files](https://github.com/OthmanAdi/planning-with-files) skill for managing complex tasks.

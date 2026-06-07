@@ -1,90 +1,90 @@
-# 迁移指南
+# Migration Guide
 
-从 Zep Cloud 迁移到 Graphiti 本地部署的步骤说明。
+Steps for migrating from Zep Cloud to Graphiti local deployment.
 
-## 前置条件
+## Prerequisites
 
-- Docker 和 Docker Compose 已安装
+- Docker and Docker Compose installed
 - Python 3.11+
-- 已配置 LLM API（Graphiti 需要 LLM 进行实体抽取）
+- LLM API configured (Graphiti requires an LLM for entity extraction)
 
-## 迁移步骤
+## Migration Steps
 
-### 1. 启动 Neo4j
+### 1. Start Neo4j
 
 ```bash
-# 进入项目根目录
+# Navigate to the project root directory
 cd /path/to/MiroFish
 
-# 启动 Neo4j 容器
+# Start the Neo4j container
 docker-compose -f docker-compose.local.yml up -d
 
-# 检查容器状态
+# Check container status
 docker-compose -f docker-compose.local.yml ps
 ```
 
-等待健康检查通过（约 30 秒），状态应显示 `healthy`。
+Wait for the health check to pass (about 30 seconds); the status should show `healthy`.
 
-### 2. 验证 Neo4j 连接
+### 2. Verify Neo4j Connection
 
-访问 Neo4j Browser：http://localhost:7474
+Visit Neo4j Browser: http://localhost:7474
 
-- 用户名：`neo4j`
-- 密码：`password`
+- Username: `neo4j`
+- Password: `password`
 
-### 3. 安装依赖
+### 3. Install Dependencies
 
 ```bash
 cd backend
 
-# 使用 uv（推荐）
+# Using uv (recommended)
 uv sync
 
-# 安装 Graphiti 本地后端依赖（可选）
+# Install Graphiti local backend dependencies (optional)
 uv sync --extra graphiti
 
-# 或使用 pip
+# Or using pip
 pip install graphiti-core neo4j
 ```
 
-> 注意：当前 `oasis`（`camel-oasis`）与 `graphiti` 可能存在 Python Neo4j driver 版本冲突，导致无法在同一 venv 同时安装。
-> 如果你的目标是跑通“本地图谱链路”，建议先只启用 `--extra graphiti`；完整链路（含仿真）需要先解决依赖冲突（见 `docs/zep-localization-plan.md` 的「7.5」）。
+> Note: There is currently a Python Neo4j driver version conflict between `oasis` (`camel-oasis`) and `graphiti`, preventing them from being installed in the same venv.
+> If your goal is to get the "local graph pipeline" working, we recommend enabling only `--extra graphiti` first; the full pipeline (including simulation) requires resolving the dependency conflict first (see `docs/zep-localization-plan.md`, section 7.5).
 
-### 4. 配置环境变量
+### 4. Configure Environment Variables
 
-创建或更新 `.env` 文件：
+Create or update the `.env` file:
 
 ```env
-# 切换到 Graphiti 后端
+# Switch to Graphiti backend
 ZEP_BACKEND=graphiti
 
-# Neo4j 连接配置
+# Neo4j connection configuration
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 
-# LLM 配置（Graphiti 必需）
+# LLM configuration (required by Graphiti)
 LLM_API_KEY=your_api_key
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_NAME=your_chat_model
 
-# Graphiti 模型（推荐显式设置）
+# Graphiti models (explicit configuration recommended)
 GRAPHITI_LLM_MODEL=your_chat_model
 GRAPHITI_EMBEDDING_MODEL=your_embedding_model
 ```
 
-### 5. 启动应用
+### 5. Start the Application
 
 ```bash
 cd backend
 uv run python run.py
 ```
 
-> 也可以在项目根目录直接运行：`npm run backend`（仅启动后端）或 `npm run dev`（同时启动前后端）。
+> You can also run from the project root: `npm run backend` (backend only) or `npm run dev` (starts both frontend and backend).
 
-## Docker 部署说明
+## Docker Deployment Guide
 
-### docker-compose.local.yml 配置
+### docker-compose.local.yml Configuration
 
 ```yaml
 version: '3.8'
@@ -117,118 +117,118 @@ volumes:
   neo4j_logs:
 ```
 
-### 常用命令
+### Common Commands
 
 ```bash
-# 启动
+# Start
 docker-compose -f docker-compose.local.yml up -d
 
-# 停止
+# Stop
 docker-compose -f docker-compose.local.yml down
 
-# 查看日志
+# View logs
 docker-compose -f docker-compose.local.yml logs -f neo4j
 
-# 重置数据（危险操作）
+# Reset data (destructive operation)
 docker-compose -f docker-compose.local.yml down -v
 ```
 
-## 数据迁移
+## Data Migration
 
-### 从 Zep Cloud 导出数据
+### Exporting Data from Zep Cloud
 
-目前暂不支持自动数据迁移。如需迁移历史数据：
+Automated data migration is not currently supported. If you need to migrate historical data:
 
-1. 使用 Zep Cloud API 导出节点和边数据
-2. 转换为 Graphiti episode 格式
-3. 使用 `add_episode()` 重新导入
+1. Use the Zep Cloud API to export node and edge data
+2. Convert to Graphiti episode format
+3. Re-import using `add_episode()`
 
-### 数据格式参考
+### Data Format Reference
 
 ```python
-# Zep Cloud 导出格式
+# Zep Cloud export format
 nodes = zep_client.node.get_by_graph_id(graph_id)
 edges = zep_client.edge.get_by_graph_id(graph_id)
 
-# 转换为 episode 文本重新导入
+# Convert to episode text for re-import
 for edge in edges:
     episode_text = f"{edge.source_node.name} {edge.name} {edge.target_node.name}"
     graphiti_client.add_episode(graph_id, episode_text)
 ```
 
-## 切回 Zep Cloud
+## Switching Back to Zep Cloud
 
-如需切回 Zep Cloud 后端：
+If you need to switch back to the Zep Cloud backend:
 
 ```bash
-# 修改环境变量
+# Modify environment variables
 export ZEP_BACKEND=cloud
 export ZEP_API_KEY=your_api_key
 
-# 重启应用
+# Restart the application
 cd backend && uv run python run.py
 ```
 
-无需修改任何代码，应用会自动使用 Zep Cloud 后端。
+No code changes required; the application will automatically use the Zep Cloud backend.
 
-## 常见问题
+## Common Issues
 
-### 1. Neo4j 连接失败
+### 1. Neo4j Connection Failure
 
-**症状**：`ServiceUnavailable: Unable to retrieve routing information`
+**Symptoms**: `ServiceUnavailable: Unable to retrieve routing information`
 
-**解决方案**：
+**Solution**:
 ```bash
-# 检查容器状态
+# Check container status
 docker-compose -f docker-compose.local.yml ps
 
-# 如果状态不是 healthy，查看日志
+# If status is not healthy, check logs
 docker-compose -f docker-compose.local.yml logs neo4j
 
-# 重启容器
+# Restart container
 docker-compose -f docker-compose.local.yml restart neo4j
 ```
 
-### 2. Graphiti 初始化慢
+### 2. Slow Graphiti Initialization
 
-**症状**：首次启动时 `build_indices_and_constraints()` 耗时较长
+**Symptoms**: `build_indices_and_constraints()` takes a long time on first startup
 
-**说明**：这是正常现象，Graphiti 需要在 Neo4j 中创建索引和约束。后续启动会快很多。
+**Explanation**: This is normal behavior; Graphiti needs to create indexes and constraints in Neo4j. Subsequent startups will be much faster.
 
-### 3. LLM API 报错
+### 3. LLM API Errors
 
-**症状**：`OpenAI API error` 或类似错误
+**Symptoms**: `OpenAI API error` or similar errors
 
-**解决方案**：
-1. 检查 `LLM_API_KEY` 是否正确
-2. 检查 `LLM_BASE_URL` 是否可访问
-3. 确认 API 余额充足
+**Solution**:
+1. Verify that `LLM_API_KEY` is correct
+2. Verify that `LLM_BASE_URL` is accessible
+3. Confirm sufficient API balance
 
-### 4. 搜索结果为空
+### 4. Empty Search Results
 
-**症状**：`search()` 返回空结果
+**Symptoms**: `search()` returns empty results
 
-**可能原因**：
-1. `graph_id`（`group_id`）不匹配
-2. Episode 尚未处理完成
-3. 查询词与数据不匹配
+**Possible causes**:
+1. `graph_id` (`group_id`) mismatch
+2. Episode has not finished processing
+3. Query terms do not match the data
 
-**调试方法**：
+**Debugging**:
 ```python
-# 直接查询 Neo4j 检查数据
+# Query Neo4j directly to check data
 MATCH (n:Entity) WHERE n.group_id = "your_graph_id" RETURN n LIMIT 10
 ```
 
-### 5. 内存占用高
+### 5. High Memory Usage
 
-**症状**：Neo4j 容器内存占用大
+**Symptoms**: Neo4j container uses a lot of memory
 
-**解决方案**：在 docker-compose.local.yml 中限制内存
+**Solution**: Limit memory in docker-compose.local.yml
 
 ```yaml
 services:
   neo4j:
-    # ... 其他配置 ...
+    # ... other configuration ...
     deploy:
       resources:
         limits:
@@ -238,19 +238,19 @@ services:
       NEO4J_dbms_memory_heap_max__size: 1G
 ```
 
-## 功能差异说明
+## Feature Differences
 
-| 功能 | Zep Cloud | Graphiti 本地 |
-|------|-----------|---------------|
-| Ontology 定义 | 支持 | 暂不支持 |
-| 多图谱隔离 | 原生支持 | 通过 group_id 实现 |
-| 实体抽取 | 内置 | 需要配置 LLM |
-| 搜索重排序 | 支持多种 reranker | 使用默认方式 |
-| Episode 异步处理 | 需轮询等待 | 同步处理 |
+| Feature | Zep Cloud | Graphiti Local |
+|----------|-----------|---------------|
+| Ontology definition | Supported | Not currently supported |
+| Multi-graph isolation | Natively supported | Via group_id |
+| Entity extraction | Built-in | Requires LLM configuration |
+| Search re-ranking | Multiple rerankers supported | Uses default method |
+| Episode async processing | Requires polling | Synchronous processing |
 
-## 性能优化建议
+## Performance Optimization Recommendations
 
-1. **Neo4j 内存配置**：生产环境建议至少 4GB 堆内存
-2. **索引优化**：确保 `group_id` 字段有索引
-3. **批量操作**：使用 `add_episode_batch()` 批量添加数据
-4. **连接池**：GraphitiClient 内部已管理连接池，避免频繁创建实例
+1. **Neo4j memory configuration**: At least 4GB heap memory recommended for production
+2. **Index optimization**: Ensure the `group_id` field has an index
+3. **Batch operations**: Use `add_episode_batch()` for bulk data insertion
+4. **Connection pool**: GraphitiClient internally manages the connection pool; avoid frequent instance creation

@@ -1,29 +1,29 @@
 name: Feature Request
-description: 提出功能建议
+description: Suggest a feature
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
-      value: 感谢你的功能建议！
+      value: Thanks for your feature suggestion!
   - type: textarea
     id: problem
     attributes:
-      label: 问题描述
-      description: 你想解决什么问题？
+      label: Problem Description
+      description: What problem are you trying to solve?
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: 建议方案
-      description: 你希望如何实现？
+      label: Proposed Solution
+      description: How would you like this to be implemented?
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: 替代方案
-      description: 你考虑过其他方案吗？
+      label: Alternative Solutions
+      description: Have you considered any alternative approaches?
     validations:
       required: false

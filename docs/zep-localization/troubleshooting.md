@@ -1,27 +1,27 @@
-# Zep 本地化问题排查指南
+# Zep Localization Troubleshooting Guide
 
-本文档记录 Zep 本地化（graphiti-core + Neo4j）实施过程中遇到的问题及解决方案。
+This document records problems encountered during the Zep localization (graphiti-core + Neo4j) implementation and their solutions.
 
-## 1. Neo4j 版本冲突
+## 1. Neo4j Version Conflict
 
-### 问题描述
-项目中存在两个依赖对 neo4j driver 版本有冲突要求：
-- `camel-ai` (用于模拟) 需要 `neo4j==5.23.0`
-- `graphiti-core` (用于知识图谱) 需要 `neo4j>=5.26.0`
+### Problem Description
+The project has two dependencies with conflicting requirements for the neo4j driver version:
+- `camel-ai` (used for simulation) requires `neo4j==5.23.0`
+- `graphiti-core` (used for knowledge graph) requires `neo4j>=5.26.0`
 
-### 解决方案
-**双虚拟环境隔离**：
+### Solution
+**Dual virtual environment isolation**:
 
 ```
 backend/
-├── .venv/              # 主环境 (Flask + graphiti-core)
+├── .venv/              # Main environment (Flask + graphiti-core)
 │   └── neo4j 6.0.3
-└── .venv-simulation/   # 模拟环境 (camel-ai/oasis)
+└── .venv-simulation/   # Simulation environment (camel-ai/oasis)
     └── neo4j 5.23.0
 ```
 
-实现细节：
-1. 创建独立的模拟环境（需要 Python 3.10-3.11，camel-oasis 不支持 3.12+）：
+Implementation details:
+1. Create a separate simulation environment (requires Python 3.10-3.11; camel-oasis does not support 3.12+):
    ```bash
    cd backend
    uv venv .venv-simulation --python 3.11
@@ -29,10 +29,10 @@ backend/
    uv pip install camel-oasis==0.2.5 camel-ai==0.2.78 openai python-dotenv
    ```
 
-2. 修改 `simulation_runner.py`，自动检测并使用独立环境：
+2. Modify `simulation_runner.py` to auto-detect and use the separate environment:
    ```python
    def _get_simulation_python() -> str:
-       # 优先级：环境变量 > .venv-simulation > 当前 Python
+       # Priority: environment variable > .venv-simulation > current Python
        env_python = os.environ.get('SIMULATION_PYTHON')
        if env_python and os.path.isfile(env_python):
            return env_python
@@ -45,20 +45,20 @@ backend/
        return sys.executable
    ```
 
-3. 模拟脚本已通过 `subprocess.Popen` 运行，天然进程隔离
+3. The simulation script already runs via `subprocess.Popen`, providing natural process isolation
 
 ---
 
-## 2. DashScope Embedding 批次大小限制
+## 2. DashScope Embedding Batch Size Limit
 
-### 问题描述
-DashScope API 对 embedding 请求有批次大小限制（最大 10 条），但 `graphiti-core` 的 `OpenAIEmbedder` 会将所有输入一次性发送，导致 400 错误：
+### Problem Description
+The DashScope API has a batch size limit for embedding requests (maximum 10 items), but `graphiti-core`'s `OpenAIEmbedder` sends all input at once, causing a 400 error:
 ```
 Error code: 400 - ... batch size is invalid, it should not be larger than 10
 ```
 
-### 解决方案
-创建 `DashScopeEmbedderWrapper` 包装器，自动分块处理：
+### Solution
+Create a `DashScopeEmbedderWrapper` that automatically chunks requests:
 
 ```python
 class DashScopeEmbedderWrapper:
@@ -73,7 +73,7 @@ class DashScopeEmbedderWrapper:
         if len(input_data_list) <= self.max_batch_size:
             return await self._embedder.create_batch(input_data_list)
 
-        # 分块处理
+        # Chunk processing
         results = []
         for i in range(0, len(input_data_list), self.max_batch_size):
             batch = input_data_list[i:i + self.max_batch_size]
@@ -82,40 +82,40 @@ class DashScopeEmbedderWrapper:
         return results
 ```
 
-位置：`backend/app/services/zep_graphiti_impl.py`
+Location: `backend/app/services/zep_graphiti_impl.py`
 
 ---
 
-## 3. Flask 同步框架 + Graphiti 异步库的事件循环冲突
+## 3. Event Loop Conflict Between Flask Sync Framework and Graphiti Async Library
 
-### 问题描述
-`graphiti-core` 是纯异步库，但 Flask 是同步框架。在 Flask 请求中调用异步代码时出现多种错误：
+### Problem Description
+`graphiti-core` is a purely async library, but Flask is a synchronous framework. Multiple errors occur when calling async code in Flask requests:
 
-**错误 1**：`RuntimeError: This event loop is already running`
-**错误 2**：`RuntimeError: cannot enter context: ... is already entered`
-**错误 3**：`RuntimeError: Leaving task <Task-X> does not match the current task <Task-Y>`
+**Error 1**: `RuntimeError: This event loop is already running`
+**Error 2**: `RuntimeError: cannot enter context: ... is already entered`
+**Error 3**: `RuntimeError: Leaving task <Task-X> does not match the current task <Task-Y>`
 
-### 问题分析
-最初尝试的方案及其问题：
+### Analysis
+Initially attempted approaches and their problems:
 
-1. **`nest_asyncio.apply()` 全局应用** - 修改事件循环内部行为，与多线程共享循环冲突
-2. **持久事件循环 + 多线程** - 多个 Flask 请求线程同时驱动同一个循环，导致 context variable 冲突
-3. **每次调用 `asyncio.run()`** - Neo4j driver 报错"绑定到不同循环"
+1. **Applying `nest_asyncio.apply()` globally** - Modifies event loop internal behavior, conflicts with shared loop across threads
+2. **Persistent event loop + multithreading** - Multiple Flask request threads simultaneously driving the same loop, causing context variable conflicts
+3. **Calling `asyncio.run()` each time** - Neo4j driver errors about "bound to a different loop"
 
-### 解决方案
-**单后台线程 + 专用事件循环（方案 A）**：
+### Solution
+**Single background thread + dedicated event loop (Approach A)**:
 
 ```
-Flask 请求线程 ─────────────────────────────────────┐
+Flask request thread ────────────────────────────────────┐
                                                     │
-Flask 请求线程 ──► asyncio.run_coroutine_threadsafe ──► 专用后台线程
+Flask request thread ──► asyncio.run_coroutine_threadsafe ──► dedicated background thread
                                                     │   (loop.run_forever)
-Flask 请求线程 ─────────────────────────────────────┘   ↓
+Flask request thread ────────────────────────────────────┘   ↓
                                                     Graphiti / Neo4j driver
-                                                    (始终绑定同一循环)
+                                                    (always bound to the same loop)
 ```
 
-实现代码：
+Implementation:
 
 ```python
 _async_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -123,14 +123,14 @@ _async_thread: Optional[threading.Thread] = None
 _init_lock = threading.Lock()
 
 def _start_async_loop():
-    """在后台线程中启动事件循环"""
+    """Start event loop in background thread"""
     global _async_loop
     _async_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(_async_loop)
     _async_loop.run_forever()
 
 def _ensure_async_loop():
-    """确保后台事件循环已启动"""
+    """Ensure background event loop is started"""
     global _async_thread
     if _async_thread is None or not _async_thread.is_alive():
         with _init_lock:
@@ -145,35 +145,35 @@ def _ensure_async_loop():
                     time.sleep(0.01)
 
 def _run_async(coro):
-    """在同步上下文中运行异步协程"""
+    """Run async coroutine in sync context"""
     _ensure_async_loop()
     future = asyncio.run_coroutine_threadsafe(coro, _async_loop)
     return future.result(timeout=300)
 ```
 
-**关键点**：
-- 移除 `nest_asyncio`
-- 单后台线程 + `run_forever()`
-- Flask 通过 `run_coroutine_threadsafe` 提交任务
-- Neo4j driver 始终绑定同一循环
-- 串行执行对 MVP 场景足够，如需并发可扩展为 loop pool
+**Key points**:
+- Removed `nest_asyncio`
+- Single background thread + `run_forever()`
+- Flask submits tasks via `run_coroutine_threadsafe`
+- Neo4j driver is always bound to the same loop
+- Serial execution is sufficient for MVP scenarios; can be extended to a loop pool if concurrency is needed
 
-位置：`backend/app/services/zep_graphiti_impl.py`
+Location: `backend/app/services/zep_graphiti_impl.py`
 
 ---
 
-## 4. 前端模拟状态显示问题
+## 4. Frontend Simulation Status Display Issue
 
-### 问题描述
-模拟失败时，前端状态显示不正确（一直显示运行中）。
+### Problem Description
+When simulation fails, the frontend status display is incorrect (shows "running" indefinitely).
 
-### 解决方案
-在 `Step3Simulation.vue` 的 `fetchRunStatus()` 中添加 `failed` 状态检测：
+### Solution
+Add `failed` status detection in `Step3Simulation.vue`'s `fetchRunStatus()`:
 
 ```javascript
 if (data.runner_status === 'failed') {
-  const errorMsg = data.error || '模拟运行失败'
-  addLog(`✗ 模拟失败: ${errorMsg}`)
+  const errorMsg = data.error || 'Simulation run failed'
+  addLog(`✗ Simulation failed: ${errorMsg}`)
   phase.value = 2
   stopPolling()
   emit('update-status', 'error')
@@ -183,33 +183,33 @@ if (data.runner_status === 'failed') {
 
 ---
 
-## 本地开发环境设置
+## Local Development Environment Setup
 
-### 前置要求
-- Python 3.11（模拟环境需要，camel-oasis 不支持 3.12+）
-- Neo4j 数据库
-- Node.js（前端）
+### Prerequisites
+- Python 3.11 (required for simulation environment; camel-oasis does not support 3.12+)
+- Neo4j database
+- Node.js (frontend)
 
-### 快速启动
+### Quick Start
 
 ```bash
-# 1. 启动 Neo4j
+# 1. Start Neo4j
 docker-compose -f docker-compose.local.yml up -d neo4j
 
-# 2. 启动后端（主环境）
+# 2. Start backend (main environment)
 cd backend
 source .venv/bin/activate
 python run.py
 
-# 3. 启动前端
+# 3. Start frontend
 cd frontend
 npm run dev
 ```
 
-### 数据清理
+### Data Cleanup
 
 ```bash
-# 清理 Neo4j
+# Clean up Neo4j
 .venv/bin/python -c "
 from neo4j import GraphDatabase
 d = GraphDatabase.driver('bolt://localhost:7687', auth=('neo4j', 'password'))
@@ -218,23 +218,23 @@ with d.session() as s:
 d.close()
 "
 
-# 清理模拟数据
+# Clean up simulation data
 rm -rf uploads/simulations/* uploads/projects/*
 ```
 
-### 验证环境隔离
+### Verify Environment Isolation
 
 ```bash
-# 检查 neo4j 版本
-echo "主环境: $(.venv/bin/python -c 'import neo4j; print(neo4j.__version__)')"
-echo "模拟环境: $(.venv-simulation/bin/python -c 'import neo4j; print(neo4j.__version__)')"
-# 预期：主环境 6.0.3，模拟环境 5.23.0
+# Check neo4j version
+echo "Main environment: $(.venv/bin/python -c 'import neo4j; print(neo4j.__version__)')"
+echo "Simulation environment: $(.venv-simulation/bin/python -c 'import neo4j; print(neo4j.__version__)')"
+# Expected: main environment 6.0.3, simulation environment 5.23.0
 ```
 
 ---
 
-## 未来优化方向
+## Future Optimization Directions
 
-1. **图谱服务独立化**：将 Graphiti 做成独立进程/服务（FastAPI），彻底解决事件循环和依赖冲突
-2. **并发优化**：如需更高吞吐，可扩展为 loop pool（多线程多循环多 Graphiti 实例）
-3. **生产部署**：考虑使用 Gunicorn + gevent 或切换到 FastAPI
+1. **Decouple Graph Service**: Make Graphiti an independent process/service (FastAPI), completely resolving the event loop and dependency conflict issues
+2. **Concurrency Optimization**: If higher throughput is needed, extend to a loop pool (multiple threads, multiple loops, multiple Graphiti instances)
+3. **Production Deployment**: Consider using Gunicorn + gevent or switching to FastAPI

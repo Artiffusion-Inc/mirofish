@@ -1,44 +1,44 @@
-# 贡献指南
+# Contributing Guide
 
-感谢你对 MiroFish-Local 的关注！我们欢迎任何形式的贡献。
+Thank you for your interest in MiroFish-Local! We welcome contributions of any kind.
 
-## 如何提交 Issue
+## How to Submit an Issue
 
-- **Bug 报告**：使用 [Bug Report](https://github.com/tt-a1i/MiroFish-local/issues/new?template=bug_report.yml) 模板
-- **功能建议**：使用 [Feature Request](https://github.com/tt-a1i/MiroFish-local/issues/new?template=feature_request.yml) 模板
+- **Bug Report**: Use the [Bug Report](https://github.com/tt-a1i/MiroFish-local/issues/new?template=bug_report.yml) template
+- **Feature Request**: Use the [Feature Request](https://github.com/tt-a1i/MiroFish-local/issues/new?template=feature_request.yml) template
 
-## 如何提交 PR
+## How to Submit a PR
 
-1. **Fork** 本仓库
-2. 创建特性分支：`git checkout -b feat/your-feature`
-3. 提交变更：`git commit -m "feat: add your feature"`
-4. 推送分支：`git push origin feat/your-feature`
-5. 创建 **Pull Request**
+1. **Fork** this repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit your changes: `git commit -m "feat: add your feature"`
+4. Push the branch: `git push origin feat/your-feature`
+5. Create a **Pull Request**
 
-## 开发环境搭建
+## Setting Up the Development Environment
 
-请参考 [README.md](./README.md) 的「快速开始」章节配置开发环境。
+Please refer to the "Quick Start" section in [README.md](./README.md) to set up your development environment.
 
-## 代码规范
+## Code Standards
 
-| 语言 | 规范 | 工具 |
-|------|------|------|
+| Language | Standard | Tool |
+|----------|----------|------|
 | Python | PEP 8 | `ruff check .` |
 | JavaScript | ESLint | `npm run lint` |
 
-## Commit Message 规范
+## Commit Message Convention
 
-使用 [Conventional Commits](https://www.conventionalcommits.org/) 格式：
+Use the [Conventional Commits](https://www.conventionalcommits.org/) format:
 
-| 前缀 | 用途 | 示例 |
-|------|------|------|
-| `feat` | 新功能 | `feat: add graphiti backend support` |
-| `fix` | Bug 修复 | `fix: resolve neo4j connection timeout` |
-| `docs` | 文档更新 | `docs: update README` |
-| `refactor` | 重构 | `refactor: extract graph storage interface` |
-| `test` | 测试 | `test: add backend unit tests` |
-| `chore` | 构建/工具 | `chore: update dependencies` |
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `feat` | New feature | `feat: add graphiti backend support` |
+| `fix` | Bug fix | `fix: resolve neo4j connection timeout` |
+| `docs` | Documentation update | `docs: update README` |
+| `refactor` | Refactoring | `refactor: extract graph storage interface` |
+| `test` | Tests | `test: add backend unit tests` |
+| `chore` | Build/tooling | `chore: update dependencies` |
 
-## 许可证
+## License
 
-提交贡献即表示你同意将代码以本项目相同的许可证（AGPL-3.0）发布。
+By submitting a contribution, you agree to release your code under the same license as this project (AGPL-3.0).

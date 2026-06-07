@@ -1,50 +1,50 @@
 name: Bug Report
-description: 报告一个 Bug
+description: Report a bug
 title: "[Bug]: "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
-      value: 感谢你提交 Bug 报告！请尽量详细描述问题。
+      value: Thanks for submitting a bug report! Please describe the problem in as much detail as possible.
   - type: textarea
     id: description
     attributes:
-      label: Bug 描述
-      description: 清晰简洁地描述遇到的问题
+      label: Bug Description
+      description: Clearly and concisely describe the issue you encountered
     validations:
       required: true
   - type: textarea
     id: reproduce
     attributes:
-      label: 复现步骤
-      description: 如何复现这个问题？
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
       placeholder: |
-        1. 执行 ...
-        2. 点击 ...
-        3. 出现错误 ...
+        1. Run ...
+        2. Click ...
+        3. Error appears ...
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: 期望行为
-      description: 你期望发生什么？
+      label: Expected Behavior
+      description: What did you expect to happen?
     validations:
       required: true
   - type: dropdown
     id: backend
     attributes:
-      label: Zep 后端模式
+      label: Zep Backend Mode
       options:
-        - cloud（Zep Cloud）
-        - graphiti（本地 Neo4j）
+        - cloud (Zep Cloud)
+        - graphiti (Local Neo4j)
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
-      label: 环境信息
-      description: 操作系统、Python 版本、Node.js 版本等
+      label: Environment Information
+      description: OS, Python version, Node.js version, etc.
       placeholder: |
         - OS: macOS 14.x
         - Python: 3.11.x

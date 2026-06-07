@@ -4,122 +4,122 @@
 
 # MiroFish-Local
 
-**基于 [MiroFish](https://github.com/666ghj/MiroFish) 的本地化增强版 — 支持 Graphiti + Neo4j 完全本地部署，数据不出域。**
+**Local-first fork of [MiroFish](https://github.com/666ghj/MiroFish) — with Graphiti + Neo4j for fully local deployment. Your data stays on your machine.**
 
-*多智能体群体智能仿真引擎，模拟舆情、市场情绪与社会动态。可完全运行在本地环境。*
+*A multi-agent swarm intelligence engine that simulates public opinion, market sentiment, and social dynamics. Runs entirely in your local environment.*
 
 [![GitHub Stars](https://img.shields.io/github/stars/tt-a1i/MiroFish-local?style=flat-square)](https://github.com/tt-a1i/MiroFish-local/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/tt-a1i/MiroFish-local?style=flat-square)](https://github.com/tt-a1i/MiroFish-local/network)
 [![GitHub License](https://img.shields.io/github/license/tt-a1i/MiroFish-local?style=flat-square)](https://github.com/tt-a1i/MiroFish-local/blob/main/LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-支持-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[English](./README-EN.md) | [中文文档](./README.md)
+[English](./README-EN.md) | [Chinese](./README.md)
 
 </div>
 
-## 🤔 这是什么？
+## 🤔 What is this?
 
-[MiroFish](https://github.com/666ghj/MiroFish) 是一款基于多智能体技术的 AI 预测引擎，通过构建高保真平行数字世界进行群体智能仿真。但原版 MiroFish 的记忆与知识图谱完全依赖 **Zep Cloud** 云服务——数据经过云端，且无法在离线环境运行。
+[MiroFish](https://github.com/666ghj/MiroFish) is a multi-agent AI prediction engine that constructs high-fidelity parallel digital worlds for swarm intelligence simulation. However, the original MiroFish relies entirely on **Zep Cloud** for memory and knowledge graph services — data passes through a third-party cloud, and it cannot run in offline environments.
 
-**MiroFish-Local** 在原版基础上新增了 **Graphiti + Neo4j 本地模式**，让你可以在完全不依赖云端记忆服务的情况下运行整个仿真流程。同时保留了原版的 Zep Cloud 模式，通过一个环境变量即可自由切换。
+**MiroFish-Local** adds a **Graphiti + Neo4j local mode** on top of the original, allowing you to run the entire simulation pipeline without any cloud-based memory service. The original Zep Cloud mode is fully preserved — switch between modes with a single environment variable.
 
-### 与原版 MiroFish 的差异
+### How it differs from upstream MiroFish
 
-| 特性 | 原版 MiroFish | MiroFish-Local |
-|------|:------------:|:--------------:|
-| 记忆 / 知识图谱 | Zep Cloud（云端） | **Graphiti + Neo4j（本地）** 或 Zep Cloud |
-| 云端依赖 | 必须使用 Zep Cloud API | **可选：支持 Cloud 和本地双模式** |
-| 数据隐私 | 数据经过第三方云端 | **本地模式下数据完全不出域** |
-| 实体抽取 | Zep Cloud 内置 | **本地 LLM 同步抽取（via Graphiti）** |
-| 部署依赖 | 需要 Zep Cloud 账号 | **Docker Compose 一键启动 Neo4j** |
-| 模式切换 | 无 | **`ZEP_BACKEND=cloud\|graphiti` 一键切换** |
+| Feature | Original MiroFish | MiroFish-Local |
+|---------|:-----------------:|:--------------:|
+| Memory / Knowledge Graph | Zep Cloud (remote) | **Graphiti + Neo4j (local)** or Zep Cloud |
+| Cloud Dependency | Requires Zep Cloud API | **Optional: supports both Cloud and local modes** |
+| Data Privacy | Data passes through third-party cloud | **Local mode keeps all data on-premise** |
+| Entity Extraction | Built into Zep Cloud | **Local LLM extraction (via Graphiti)** |
+| Deployment | Requires Zep Cloud account | **Docker Compose one-click Neo4j startup** |
+| Mode Switching | N/A | **`ZEP_BACKEND=cloud\|graphiti`** |
 
-> 一句话总结：如果你希望**数据完全留在本地**，或者在**无外网环境**下运行 MiroFish，MiroFish-Local 就是你需要的版本。
+> In short: if you want your **data to stay local**, or need to run MiroFish in an **air-gapped environment**, MiroFish-Local is the version for you.
 
-## ⚡ 3 分钟体验
+## ⚡ 3-Minute Quick Demo
 
 ```bash
 git clone https://github.com/tt-a1i/MiroFish-local.git
 cd MiroFish-local
-cp .env.example .env           # 编辑 .env 填入 LLM_API_KEY
-npm run setup:all              # 安装依赖
-npm run backend &              # 启动后端
-python demo.py                 # 运行 Demo！
+cp .env.example .env           # Edit .env and add your LLM_API_KEY
+npm run setup:all              # Install dependencies
+npm run backend &              # Start backend
+python demo.py                 # Run the demo!
 ```
 
-Demo 脚本会自动上传一条[示例新闻](./examples/seed_news.txt)，调用 LLM 提取实体关系并构建知识图谱，让你直观看到 MiroFish 的核心能力。
+The demo script auto-uploads a [sample news article](./examples/seed_news.txt), calls the LLM to extract entities and relationships, and builds a knowledge graph — giving you a hands-on feel for MiroFish's core capabilities.
 
-## 🏗️ 系统架构
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
-    A["🌱 种子输入"] --> B["🕸️ 图谱构建\n(GraphRAG)"]
-    B --> C["🏠 环境搭建\n(人设生成)"]
-    C --> D["⚙️ 并行模拟\n(OASIS 引擎)"]
-    D --> E["📊 报告生成\n(ReportAgent)"]
-    E --> F["💬 深度交互"]
+    A["🌱 Seed Input"] --> B["🕸️ Graph Building\n(GraphRAG)"]
+    B --> C["🏠 Environment Setup\n(Persona Generation)"]
+    C --> D["⚙️ Parallel Simulation\n(OASIS Engine)"]
+    D --> E["📊 Report Generation\n(ReportAgent)"]
+    E --> F["💬 Deep Interaction"]
 ```
 
-| 模块 | 说明 |
-|------|------|
-| **种子输入** | 接收用户上传的种子材料（新闻、报告、小说等），解析预测需求 |
-| **图谱构建** | 基于 GraphRAG 提取实体关系，注入个体与群体记忆，构建知识图谱。本地模式使用 Graphiti + Neo4j 替代 Zep Cloud |
-| **环境搭建** | 自动生成智能体人设，由环境配置 Agent 注入仿真参数 |
-| **并行模拟** | OASIS 引擎驱动大规模智能体并行交互，动态更新时序记忆 |
-| **报告生成** | ReportAgent 使用丰富工具集与模拟后环境深度交互，生成预测报告 |
-| **深度交互** | 用户可与模拟世界中的任意角色对话，或与 ReportAgent 进一步探讨 |
+| Module | Description |
+|--------|-------------|
+| **Seed Input** | Accepts user-uploaded seed materials (news, reports, novels, etc.) and parses prediction requirements |
+| **Graph Building** | Extracts entity relationships via GraphRAG, injects individual and collective memory to build the knowledge graph. Local mode uses Graphiti + Neo4j instead of Zep Cloud |
+| **Environment Setup** | Automatically generates agent personas; environment configuration Agent injects simulation parameters |
+| **Parallel Simulation** | OASIS engine drives large-scale agent interactions in parallel, dynamically updating temporal memory |
+| **Report Generation** | ReportAgent uses a rich toolset to deeply interact with the post-simulation environment and produce prediction reports |
+| **Deep Interaction** | Users can chat with any character in the simulated world or discuss further with ReportAgent |
 
-## 🔄 工作流程
+## 🔄 Workflow
 
-1. **图谱构建** — 现实种子提取 & 个体与群体记忆注入 & GraphRAG 构建。系统从用户上传的种子材料中抽取关键实体与关系，构建结构化知识图谱，为仿真世界奠定信息基础。
+1. **Graph Building** — Seed extraction & individual/collective memory injection & GraphRAG construction. The system extracts key entities and relationships from user-uploaded seed materials, building a structured knowledge graph that lays the information foundation for the simulated world.
 
-2. **环境搭建** — 实体关系抽取 & 人设生成 & 环境配置 Agent 注入仿真参数。基于图谱自动生成具有独立人格和背景故事的智能体，配置社交网络拓扑与初始行为参数。
+2. **Environment Setup** — Entity relationship extraction & persona generation & environment configuration Agent injects simulation parameters. Based on the knowledge graph, agents with independent personalities and backstories are automatically generated, and social network topology and initial behavioral parameters are configured.
 
-3. **开始模拟** — 双平台并行模拟 & 自动解析预测需求 & 动态更新时序记忆。OASIS 引擎驱动智能体在仿真环境中自由交互，实时记录行为轨迹与态度变化。
+3. **Simulation** — Dual-platform parallel simulation & automatic prediction requirement parsing & dynamic temporal memory updates. The OASIS engine drives agents to interact freely in the simulated environment, recording behavioral trajectories and attitude shifts in real time.
 
-4. **报告生成** — ReportAgent 拥有丰富的工具集与模拟后环境进行深度交互。汇聚仿真数据，从多维度分析群体行为模式，输出结构化预测报告。
+4. **Report Generation** — ReportAgent with a rich toolset for deep interaction with the post-simulation environment. Simulation data is aggregated and analyzed across multiple dimensions to identify collective behavior patterns, producing structured prediction reports.
 
-5. **深度互动** — 与模拟世界中的任意角色进行对话 & 与 ReportAgent 进行对话。用户可随时介入仿真世界，探索不同决策路径下的演化结果。
+5. **Deep Interaction** — Chat with any character in the simulated world & interact with ReportAgent. Users can intervene in the simulated world at any time, exploring how outcomes evolve under different decision paths.
 
-## 🎯 应用场景
+## 🎯 Use Cases
 
-| 场景 | 描述 |
-|------|------|
-| 🗞️ **舆情预测与危机公关预演** | 模拟突发事件在社交网络中的传播路径，预判舆论走向，提前制定应对方案 |
-| 💹 **金融市场情绪推演** | 构建投资者群体行为模型，模拟市场对政策、事件的反应，辅助投资决策 |
-| 🏛️ **政策影响评估** | 在虚拟社会中预演政策实施效果，观察不同群体的行为反馈与社会影响 |
-| ✍️ **创意实验** | 小说结局推演、历史事件重演、脑洞验证——让想象力在数字世界中自由奔跑 |
-| 🔬 **社会科学研究模拟** | 为社会学、传播学、行为经济学等学科提供大规模可控实验平台 |
+| Scenario | Description |
+|----------|-------------|
+| 🗞️ **Public Opinion Forecasting & Crisis PR Rehearsal** | Simulate how breaking events propagate through social networks, predict public opinion trajectories, and develop response strategies in advance |
+| 💹 **Financial Market Sentiment Analysis** | Build investor behavioral models, simulate market reactions to policies and events, and support investment decisions |
+| 🏛️ **Policy Impact Assessment** | Preview policy implementation effects in a virtual society, observing behavioral feedback and social impact across different demographics |
+| ✍️ **Creative Experiments** | Novel ending deduction, historical event replay, thought experiments — let your imagination run free in a digital world |
+| 🔬 **Social Science Research Simulation** | Provide a large-scale, controllable experimental platform for sociology, communication studies, behavioral economics, and more |
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 前置要求
+### Prerequisites
 
-> 注：MiroFish 在 Mac 环境下完成开发与测试，Windows 兼容性未知，测试中
+> Note: MiroFish was developed and tested on Mac. Windows compatibility is unknown and currently under testing.
 
-| 工具 | 版本要求 | 说明 | 安装检查 |
-|------|---------|------|---------|
-| **Python** | 3.11+ | 后端运行环境 | `python --version` |
-| **Node.js** | 18+ | 前端运行环境，包含 npm | `node -v` |
-| **uv** | 最新版 | Python 包管理器 | `uv --version` |
-| **Docker** *(可选)* | 最新版 | 本地模式启动 Neo4j 等依赖服务 | `docker --version` |
+| Tool | Version | Description | Check Installation |
+|------|---------|-------------|-------------------|
+| **Python** | 3.11+ | Backend runtime | `python --version` |
+| **Node.js** | 18+ | Frontend runtime, includes npm | `node -v` |
+| **uv** | Latest | Python package manager | `uv --version` |
+| **Docker** *(optional)* | Latest | Start dependency services (Neo4j) for local mode | `docker --version` |
 
-### 1. 配置环境变量
+### 1. Configure Environment Variables
 
 ```bash
-# 复制示例配置文件
+# Copy the example configuration file
 cp .env.example .env
 
-# 编辑 .env 文件，填入必要的 API 密钥
+# Edit the .env file and fill in the required API keys
 ```
 
-环境变量分为以下几组：
+Environment variables are organized into the following groups:
 
-#### LLM API 配置（必需）
+#### LLM API Configuration (Required)
 
-支持 OpenAI SDK 格式的任意 LLM。推荐使用阿里百炼平台 qwen-plus 模型。
+Supports any LLM compatible with the OpenAI SDK format. We recommend the Alibaba Bailian Platform's qwen-plus model.
 
-> 注意：模拟消耗较大，建议先进行小于 40 轮的模拟尝试。
+> Note: Simulations can be resource-intensive. Start with fewer than 40 rounds to get a feel for costs.
 
 ```env
 LLM_API_KEY=your_api_key
@@ -127,44 +127,44 @@ LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 LLM_MODEL_NAME=qwen-plus
 ```
 
-#### Zep 后端选择
+#### Zep Backend Selection
 
-通过 `ZEP_BACKEND` 切换记忆后端模式：
+Use `ZEP_BACKEND` to switch between memory backend modes:
 
-| 值 | 模式 | 说明 |
-|---|------|------|
-| `cloud` | Zep Cloud（默认） | 零配置，每月免费额度即可上手 |
-| `graphiti` | 本地 Graphiti + Neo4j | 完全本地化，数据不出域 |
+| Value | Mode | Description |
+|-------|------|-------------|
+| `cloud` | Zep Cloud (default) | Zero configuration, free monthly quota to get started |
+| `graphiti` | Local Graphiti + Neo4j | Fully local, data stays on-premise |
 
 ```env
 ZEP_BACKEND=cloud
 ```
 
-#### Zep Cloud 配置（`ZEP_BACKEND=cloud` 时必需）
+#### Zep Cloud Configuration (Required when `ZEP_BACKEND=cloud`)
 
-免费注册：https://app.getzep.com/
+Free registration: https://app.getzep.com/
 
 ```env
 ZEP_API_KEY=your_zep_api_key
 ```
 
-#### Graphiti / Neo4j 本地配置（`ZEP_BACKEND=graphiti` 时必需）
+#### Graphiti / Neo4j Local Configuration (Required when `ZEP_BACKEND=graphiti`)
 
 ```env
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 
-# Graphiti 使用的 LLM 模型（推荐显式配置）
+# LLM models used by Graphiti (explicit configuration recommended)
 GRAPHITI_LLM_MODEL=qwen3-max
 GRAPHITI_EMBEDDING_MODEL=text-embedding-v4
 ```
 
-> `OPENAI_API_KEY` / `OPENAI_BASE_URL` 会自动从 `LLM_API_KEY` / `LLM_BASE_URL` 映射，无需重复配置。如需单独指定 Graphiti 使用的 LLM，可显式设置 `OPENAI_API_KEY` 和 `OPENAI_BASE_URL`。
+> `OPENAI_API_KEY` / `OPENAI_BASE_URL` are automatically mapped from `LLM_API_KEY` / `LLM_BASE_URL` — no need to configure them separately. To specify a different LLM for Graphiti, explicitly set `OPENAI_API_KEY` and `OPENAI_BASE_URL`.
 
-#### 加速 LLM 配置（可选）
+#### Boost LLM Configuration (Optional)
 
-可配置独立的加速 LLM 用于提升特定环节的处理速度：
+Configure a separate LLM to accelerate specific pipeline stages:
 
 ```env
 LLM_BOOST_API_KEY=your_boost_api_key
@@ -172,113 +172,113 @@ LLM_BOOST_BASE_URL=https://another-api-provider.com/v1
 LLM_BOOST_MODEL_NAME=gpt-4o-mini
 ```
 
-### 2. 启动依赖服务（可选，仅本地模式）
+### 2. Start Dependency Services (Optional, Local Mode Only)
 
-如果选择 `ZEP_BACKEND=graphiti`，需要先启动 Neo4j 数据库：
+If you chose `ZEP_BACKEND=graphiti`, start the Neo4j database first:
 
 ```bash
-# 使用 Docker Compose 启动依赖服务（Neo4j 5.26 + APOC 插件）
+# Start dependency services (Neo4j 5.26 + APOC plugin) via Docker Compose
 docker-compose -f docker-compose.local.yml up -d
 
-# 检查服务状态
+# Check service status
 docker-compose -f docker-compose.local.yml ps
 
-# Neo4j Browser 可通过 http://localhost:7474 访问（用户名: neo4j, 密码: password）
+# Neo4j Browser available at http://localhost:7474 (user: neo4j, password: password)
 ```
 
-### 3. 安装依赖
+### 3. Install Dependencies
 
 ```bash
-# 一键安装所有依赖（根目录 + 前端 + 后端）
+# One-click installation of all dependencies (root + frontend + backend)
 npm run setup:all
 ```
 
-或者分步安装：
+Or install step by step:
 
 ```bash
-# 安装 Node 依赖（根目录 + 前端）
+# Install Node dependencies (root + frontend)
 npm run setup
 
-# 安装 Python 依赖（自动创建虚拟环境）
+# Install Python dependencies (auto-creates virtual environment)
 npm run setup:backend
 ```
 
-### 4. 启动服务
+### 4. Start Services
 
 ```bash
-# 同时启动前后端（在项目根目录执行）
+# Start both frontend and backend (run from project root)
 npm run dev
 ```
 
-**服务地址：**
-- 前端：`http://localhost:3000`
-- 后端 API：`http://localhost:5001`
+**Service URLs:**
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:5001`
 
-**单独启动：**
+**Start Individually:**
 
 ```bash
-npm run backend   # 仅启动后端
-npm run frontend  # 仅启动前端
+npm run backend   # Start backend only
+npm run frontend  # Start frontend only
 ```
 
-## 💻 硬件需求
+## 💻 Hardware Requirements
 
-MiroFish 本身是 LLM 调用型应用，计算主要依赖远端 LLM API，本地资源需求较低。
+MiroFish is an LLM-calling application — the heavy computation is handled by remote LLM APIs, so local resource requirements are modest.
 
-| 配置 | CPU | 内存 | 磁盘 | GPU |
-|------|-----|------|------|-----|
-| **最低配置** | 4 核 | 8 GB | 10 GB | 不需要 |
-| **推荐配置** | 8 核 | 16 GB | 20 GB | 不需要 |
+| Tier | CPU | RAM | Disk | GPU |
+|------|-----|-----|------|-----|
+| **Minimum** | 4 cores | 8 GB | 10 GB | Not required |
+| **Recommended** | 8 cores | 16 GB | 20 GB | Not required |
 
-> 说明：GPU 仅在本地部署 LLM（如使用 Ollama 等工具运行本地模型）时需要。使用云端 LLM API 无需 GPU。
+> Note: A GPU is only needed if you deploy an LLM locally (e.g., running a local model with Ollama). No GPU is required when using cloud LLM APIs.
 
 ## ❓ FAQ
 
 <details>
-<summary><b>Cloud 模式和本地模式有什么区别？</b></summary>
+<summary><b>What's the difference between Cloud and Local mode?</b></summary>
 
-Cloud 模式使用 Zep Cloud 云服务存储记忆和知识图谱，配置简单但数据经过云端。本地模式使用 Graphiti + Neo4j，数据完全留在本地，适合对数据隐私有要求或无外网的环境。通过 `ZEP_BACKEND` 环境变量一键切换。
+Cloud mode uses Zep Cloud for memory and knowledge graph storage — easy to set up but data passes through a third-party cloud. Local mode uses Graphiti + Neo4j, keeping all data on-premise. Ideal for privacy-sensitive or air-gapped environments. Switch with the `ZEP_BACKEND` environment variable.
 </details>
 
 <details>
-<summary><b>Neo4j 启动失败怎么办？</b></summary>
+<summary><b>Neo4j won't start — what do I do?</b></summary>
 
-1. 确认 Docker 已安装并运行：`docker --version`
-2. 检查端口 7474/7687 是否被占用：`lsof -i :7474`
-3. 查看容器日志：`docker-compose -f docker-compose.local.yml logs neo4j`
-4. 尝试清理重启：`docker-compose -f docker-compose.local.yml down -v && docker-compose -f docker-compose.local.yml up -d`
+1. Confirm Docker is installed and running: `docker --version`
+2. Check if ports 7474/7687 are in use: `lsof -i :7474`
+3. Check container logs: `docker-compose -f docker-compose.local.yml logs neo4j`
+4. Try a clean restart: `docker-compose -f docker-compose.local.yml down -v && docker-compose -f docker-compose.local.yml up -d`
 </details>
 
 <details>
-<summary><b>支持哪些 LLM？</b></summary>
+<summary><b>Which LLMs are supported?</b></summary>
 
-支持任何兼容 OpenAI SDK 格式的 LLM API，包括：阿里百炼（qwen-plus/qwen-max）、OpenAI（GPT-4o）、DeepSeek、本地 Ollama 等。只需配置 `LLM_BASE_URL` 和 `LLM_API_KEY` 即可。
+Any LLM API compatible with the OpenAI SDK format, including: Alibaba Bailian (qwen-plus/qwen-max), OpenAI (GPT-4o), DeepSeek, local Ollama, and more. Just configure `LLM_BASE_URL` and `LLM_API_KEY`.
 </details>
 
 <details>
-<summary><b>模拟一次大概消耗多少 Token？</b></summary>
+<summary><b>How many tokens does a simulation cost?</b></summary>
 
-取决于智能体数量和模拟轮次。建议首次体验使用少于 40 轮的模拟，消耗约 50-100 万 Token。
+It depends on the number of agents and simulation rounds. For your first run, we recommend fewer than 40 rounds, which typically consumes ~500K–1M tokens.
 </details>
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-欢迎提交 Pull Request 和 Issue！详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+We welcome Pull Requests and Issues! See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
-## 📄 致谢与归属
+## 📄 Credits & Attribution
 
-**本项目是 [MiroFish](https://github.com/666ghj/MiroFish) 的修改版 fork。**
+**This project is a modified fork of [MiroFish](https://github.com/666ghj/MiroFish).**
 
-感谢原项目 [666ghj/MiroFish](https://github.com/666ghj/MiroFish) 及盛大集团的开源贡献。MiroFish 的核心仿真引擎由 **[OASIS](https://github.com/camel-ai/oasis)** 驱动，OASIS 是由 [CAMEL-AI](https://github.com/camel-ai) 团队开发的高性能社交媒体模拟框架，支持百万级智能体交互仿真。
+Thanks to the original project [666ghj/MiroFish](https://github.com/666ghj/MiroFish) and Shanda Group for their open-source contributions. MiroFish's core simulation engine is powered by **[OASIS](https://github.com/camel-ai/oasis)**, a high-performance social media simulation framework developed by the [CAMEL-AI](https://github.com/camel-ai) team, supporting million-scale agent interaction simulations.
 
-**本 fork 的主要修改：**
-- 新增 Graphiti + Neo4j 本地记忆后端，替代 Zep Cloud 云端依赖
-- 实现 `ZEP_BACKEND` 环境变量，支持 `cloud` / `graphiti` 双模式切换
-- 添加 Docker Compose 配置，一键启动 Neo4j 5.26 + APOC 插件
-- 自动映射 LLM 配置到 Graphiti，减少重复配置
-- 新增搜索重排序降级机制（非标准 API 自动切换 RRF 重排序）
+**Key changes in this fork:**
+- Added Graphiti + Neo4j local memory backend, replacing Zep Cloud dependency
+- Implemented `ZEP_BACKEND` environment variable for `cloud` / `graphiti` dual-mode switching
+- Added Docker Compose configuration for one-click Neo4j 5.26 + APOC plugin startup
+- Auto-mapping of LLM configuration to Graphiti, reducing redundant configuration
+- Added search re-ranking fallback (non-standard APIs auto-switch to RRF re-ranking)
 
-## 📈 项目统计
+## 📈 Project Statistics
 
 <a href="https://www.star-history.com/#tt-a1i/MiroFish-local&type=date&legend=top-left">
  <picture>

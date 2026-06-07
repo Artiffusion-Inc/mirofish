@@ -13,7 +13,7 @@
 [![GitHub License](https://img.shields.io/github/license/tt-a1i/MiroFish-local?style=flat-square)](https://github.com/tt-a1i/MiroFish-local/blob/main/LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[English](./README-EN.md) | [中文文档](./README.md)
+[English](./README-EN.md) | [Chinese](./README.md)
 
 </div>
 
