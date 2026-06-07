@@ -346,13 +346,13 @@ def _check_simulation_prepared(simulation_id: str) -> tuple:
         else:
             logger.warning(f"Simulation {simulation_id} check result: not yet prepared (status={status}, config_generated={config_generated})")
             return False, {
-                "reason": f"Status not in prepared list or config_generated is false:", status={status}, config_generated={config_generated}",
+                "reason": f"Status not in prepared list or config_generated is false: status={status}, config_generated={config_generated}",
                 "status": status,
                 "config_generated": config_generated
             }
             
     except Exception as e:
-        return False, {"reason": f"Failed to read state file:", {str(e)}"}
+        return False, {"reason": f"Failed to read state file: {str(e)}"}
 
 
 @simulation_bp.route('/prepare', methods=['POST'])
