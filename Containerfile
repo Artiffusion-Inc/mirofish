@@ -36,7 +36,7 @@ RUN cd backend \
 FROM docker.io/library/python:3.11.12-slim-bookworm
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl gnupg wget \
+  && apt-get install -y --no-install-recommends ca-certificates curl gnupg wget procps \
   && mkdir -p /etc/apt/keyrings \
   && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
   && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
@@ -51,11 +51,11 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
 WORKDIR /app
 
-# Copy built deps from builder (most stable layers first)
-COPY --from=builder /build/node_modules ./node_modules
-COPY --from=builder /build/frontend/node_modules ./frontend/node_modules
-COPY --from=builder /build/backend/.venv ./backend/.venv
-COPY --from=builder /build/backend/.venv-simulation ./backend/.venv-simulation
+# Copy built deps from builder (most stable layers first, chown for mirofish user)
+COPY --from=builder --chown=mirofish:mirofish /build/node_modules ./node_modules
+COPY --from=builder --chown=mirofish:mirofish /build/frontend/node_modules ./frontend/node_modules
+COPY --from=builder --chown=mirofish:mirofish /build/backend/.venv ./backend/.venv
+COPY --from=builder --chown=mirofish:mirofish /build/backend/.venv-simulation ./backend/.venv-simulation
 
 # App source (changes most frequently - last COPY, with ownership)
 COPY --chown=mirofish:mirofish . .
