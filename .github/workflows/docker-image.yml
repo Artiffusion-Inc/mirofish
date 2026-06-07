@@ -27,14 +27,18 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase GHCR owner
+        id: ghcr
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/mirofish
+          images: ghcr.io/${{ steps.ghcr.outputs.owner }}/mirofish
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -42,12 +46,15 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Containerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ steps.ghcr.outputs.owner }}/mirofish:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ steps.ghcr.outputs.owner }}/mirofish:buildcache,mode=max
+          platforms: linux/amd64
+          provenance: false
+          sbom: false
